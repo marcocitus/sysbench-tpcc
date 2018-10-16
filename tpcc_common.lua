@@ -153,6 +153,11 @@ function create_tables(drv, con, table_num)
    con:query(query)
 
    query = string.format([[
+    SELECT create_reference_table('warehouse%d')
+   ]], table_num)
+   con:query(query)
+
+   query = string.format([[
 	create table IF NOT EXISTS district%d (
 	d_id ]] .. tinyint_type .. [[ not null, 
 	d_w_id smallint not null, 
@@ -170,6 +175,12 @@ function create_tables(drv, con, table_num)
       table_num, engine_def, extra_table_options)
 
     con:query(query)
+
+   query = string.format([[
+    SELECT create_reference_table('district%d')
+   ]], table_num)
+   con:query(query)
+
 
 -- CUSTOMER TABLE
 
@@ -202,6 +213,11 @@ function create_tables(drv, con, table_num)
 
    con:query(query)
 
+   query = string.format([[
+    SELECT create_distributed_table('customer%d', 'c_w_id')
+   ]], table_num)
+   con:query(query)
+
 -- HISTORY TABLE
    local hist_auto_inc=""
    local hist_pk=""
@@ -226,6 +242,11 @@ function create_tables(drv, con, table_num)
    con:query(query)
 
    query = string.format([[
+    SELECT create_distributed_table('history%d', 'h_c_w_id')
+   ]], table_num)
+   con:query(query)
+
+   query = string.format([[
 	create table IF NOT EXISTS orders%d (
 	o_id int not null, 
 	o_d_id ]] .. tinyint_type .. [[ not null, 
@@ -241,6 +262,11 @@ function create_tables(drv, con, table_num)
 
    con:query(query)
 
+   query = string.format([[
+    SELECT create_distributed_table('orders%d', 'o_w_id')
+   ]], table_num)
+   con:query(query)
+
 -- NEW_ORDER table
 
    query = string.format([[
@@ -252,6 +278,11 @@ function create_tables(drv, con, table_num)
 	) %s %s]],
       table_num, engine_def, extra_table_options)
 
+   con:query(query)
+
+   query = string.format([[
+    SELECT create_distributed_table('new_orders%d', 'no_w_id')
+   ]], table_num)
    con:query(query)
 
    query = string.format([[
@@ -271,6 +302,12 @@ function create_tables(drv, con, table_num)
       table_num, engine_def, extra_table_options)
 
    con:query(query)
+
+   query = string.format([[
+    SELECT create_distributed_table('order_line%d', 'ol_w_id')
+   ]], table_num)
+   con:query(query)
+
 
 -- STOCK table
 
@@ -299,6 +336,12 @@ function create_tables(drv, con, table_num)
 
    con:query(query)
 
+   query = string.format([[
+    SELECT create_distributed_table('stock%d', 's_w_id')
+   ]], table_num)
+   con:query(query)
+
+
    local i = table_num
 
    query = string.format([[
@@ -312,6 +355,11 @@ function create_tables(drv, con, table_num)
 	) %s %s]],
       i, engine_def, extra_table_options)
 
+   con:query(query)
+
+   query = string.format([[
+    SELECT create_reference_table('item%d')
+   ]], table_num)
    con:query(query)
 
    con:bulk_insert_init("INSERT INTO item" .. i .." (i_id, i_im_id, i_name, i_price, i_data) values")
@@ -343,9 +391,9 @@ function create_tables(drv, con, table_num)
         con:query("ALTER TABLE customer"..i.." ADD CONSTRAINT fkey_customer_1_"..table_num.." FOREIGN KEY(c_w_id,c_d_id) REFERENCES district"..i.."(d_w_id,d_id)")
         con:query("ALTER TABLE history"..i.." ADD CONSTRAINT fkey_history_1_"..table_num.." FOREIGN KEY(h_c_w_id,h_c_d_id,h_c_id) REFERENCES customer"..i.."(c_w_id,c_d_id,c_id)")
         con:query("ALTER TABLE history"..i.." ADD CONSTRAINT fkey_history_2_"..table_num.." FOREIGN KEY(h_w_id,h_d_id) REFERENCES district"..i.."(d_w_id,d_id)")
-        con:query("ALTER TABLE district"..i.." ADD CONSTRAINT fkey_district_1_"..table_num.." FOREIGN KEY(d_w_id) REFERENCES warehouse"..i.."(w_id)")
+--        con:query("ALTER TABLE district"..i.." ADD CONSTRAINT fkey_district_1_"..table_num.." FOREIGN KEY(d_w_id) REFERENCES warehouse"..i.."(w_id)")
         con:query("ALTER TABLE order_line"..i.." ADD CONSTRAINT fkey_order_line_1_"..table_num.." FOREIGN KEY(ol_w_id,ol_d_id,ol_o_id) REFERENCES orders"..i.."(o_w_id,o_d_id,o_id)")
-        con:query("ALTER TABLE order_line"..i.." ADD CONSTRAINT fkey_order_line_2_"..table_num.." FOREIGN KEY(ol_supply_w_id,ol_i_id) REFERENCES stock"..i.."(s_w_id,s_i_id)")
+--        con:query("ALTER TABLE order_line"..i.." ADD CONSTRAINT fkey_order_line_2_"..table_num.." FOREIGN KEY(ol_supply_w_id,ol_i_id) REFERENCES stock"..i.."(s_w_id,s_i_id)")
         con:query("ALTER TABLE stock"..i.." ADD CONSTRAINT fkey_stock_1_"..table_num.." FOREIGN KEY(s_w_id) REFERENCES warehouse"..i.."(w_id)")
         con:query("ALTER TABLE stock"..i.." ADD CONSTRAINT fkey_stock_2_"..table_num.." FOREIGN KEY(s_i_id) REFERENCES item"..i.."(i_id)")
     end
